@@ -1,0 +1,68 @@
+#! /usr/bin/env perl
+   use strict;
+   use 5.010;
+   use autodie;
+   use Getopt::Long;
+   my($in,$out,$help);
+   GetOptions("in=s"=>\$in,"out=s"=>\$out,"help"=>\$help);
+   if($in and $out){
+     $in=substr($in,-1) eq '/'?$in:$in.'/';
+     opendir IN,$in;
+     open OUT,'>',$out;
+
+     my %res;
+     print OUT "Species\tType\tPosition\tA\tT\tC\tG\n";
+
+     foreach(readdir IN){
+       if(m/\.fasta/){
+         my $inf=$in.$_;
+         my @sp=split(/[\.\_]/,$_);
+         my $kes=$sp[0];
+         open INF,'<',$inf;
+         
+         my $len=0;
+         while(<INF>){
+           unless(m/^>/){
+             chomp;
+             $len +=length($_);
+          }
+        }
+         close INF;
+
+         open INF,'<',$inf;
+         
+         my $type= $inf=~m/\_rev/ ? "Minus" : 'Plus';
+         my $pos=1;
+         while(<INF>){
+           unless(m/^>/){
+             chomp;
+             if(length($_)==50){
+               my $pp=$type eq 'Plus'?$pos:($len-($pos+49)+1);
+               my %res;
+               foreach(split(//,$_)){
+                 $res{$_} ++;
+              }
+               $pos +=length($_);
+               print OUT $kes."\t".$type."\t".$pp."\t".($res{"A"}*2)."\t".($res{"T"}*2)."\t".($res{"C"}*2)."\t".($res{"G"}*2)."\n";
+
+            }
+          }
+        }
+         
+
+
+         close INF;
+      }
+    }
+     closedir IN;
+
+     close OUT;
+
+   }elsif($help){
+      say"This script aims to \n
+      --in:the input path;\n
+      --out:the result file;\n
+      --help:the help!\n";
+   }else{
+      print "Please read the help!\n";
+   }

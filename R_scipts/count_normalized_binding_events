@@ -1,0 +1,52 @@
+#! /usr/bin/env perl
+   use strict;
+   use 5.010;
+   use autodie;
+   use Getopt::Long;
+   my($in,$cutoff,$help);
+   GetOptions("in=s"=>\$in,"cutoff=s"=>\$cutoff,"help"=>\$help);
+   if($in and $cutoff){
+     $in=substr($in,-1) eq '/'?$in:$in.'/';
+     opendir IN,$in;
+     
+     foreach my $kes(readdir IN){
+       my $inp=$in.$kes.'/';
+       my $out=$kes.'_ext_normalized_binding_events_cutoff'.$cutoff;
+       open OUT,'>',$out;
+       print OUT "RBP\tBinding_events\n";
+       opendir INP,$inp;
+       foreach(readdir INP){
+         if(m/\.txt$/){
+           my $inf=$inp.$_;
+           my $rbp=substr($_,0,index($_,'.'));
+           my $total=0;
+           my $event=0;
+           open INF,'<',$inf;
+           while(<INF>){
+             chomp;
+             my @lines=split(/\t/,$_); #print length($lines[-2])."\n";
+             if(length($lines[-2])==50){
+               $total ++;
+               if($lines[-1]>=$cutoff){
+                 $event ++;
+              }
+            } 
+          }
+           print OUT $rbp."\t".($event*100/$total)."\n";
+           close INF;
+        }
+      }
+       closedir INP;
+       close OUT;
+    }
+     closedir IN;
+     
+
+   }elsif($help){
+      say"This script aims to \n
+      --in:the input path;\n
+      --cutoff; the cutoff for RBPsuite\n
+      --help:the help!\n";
+   }else{
+      print "Please read the help!\n";
+   }

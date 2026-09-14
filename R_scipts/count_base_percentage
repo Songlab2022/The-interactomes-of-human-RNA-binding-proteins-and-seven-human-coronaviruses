@@ -1,0 +1,59 @@
+#! /usr/bin/env perl
+   use strict;
+   use 5.010;
+   use autodie;
+   use Getopt::Long;
+   my($in,$out,$help);
+   GetOptions("in=s"=>\$in,"out=s"=>\$out,"help"=>\$help);
+   if($in and $out){
+     $in=substr($in,-1) eq '/'?$in:$in.'/';
+     opendir IN,$in;
+     open OUT,'>',$out;
+
+     my %res;
+     print OUT "Species\tA\tT\tC\tG\n";
+
+     foreach(readdir IN){
+       if(m/\.fasta/){
+         my $inf=$in.$_;
+         my $kes=substr($_,0,index($_,'.'));
+         open INF,'<',$inf;
+         
+         my $len=0;
+         my %bases;
+         while(<INF>){
+           unless(m/^>/){
+             chomp;
+             $len +=length($_);
+             foreach(split(//,$_)){
+               $bases{$_} ++;
+            }
+          }
+        }
+         foreach(keys %bases){
+           $res{$kes}{$_}=$bases{$_}*100/$len;
+        }
+         close INF;
+      }
+    }
+     closedir IN;
+
+     foreach my $_(sort keys %res){
+       my @os;
+       push @os,$_;
+       push @os,$res{$_}{"A"};
+       push @os,$res{$_}{"T"};  
+       push @os,$res{$_}{"C"};
+       push @os,$res{$_}{"G"};
+       print OUT join("\t",@os)."\n";
+    }
+     close OUT;
+
+   }elsif($help){
+      say"This script aims to \n
+      --in:the input path;\n
+      --out:the result file;\n
+      --help:the help!\n";
+   }else{
+      print "Please read the help!\n";
+   }
